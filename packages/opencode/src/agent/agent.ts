@@ -161,19 +161,13 @@ export const layer = Layer.effect(
               Permission.fromConfig({
                 question: "allow",
                 plan_exit: "allow",
-                task: {
-                  general: "deny",
-                },
                 external_directory: {
                   [path.join(Global.Path.data, "plans", "*")]: "allow",
                 },
                 edit: {
                   "*": "deny",
-                  [path.join(".opencode", "plans", "*.md")]: "allow",
-                  [path.join(".opencode", "plans", "*.plan.json")]: "allow",
-                  [path.join(".opencode", "contracts", "*")]: "allow",
-                  [path.relative(ctx.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
-                  [path.relative(ctx.worktree, path.join(Global.Path.data, path.join("plans", "*.plan.json")))]: "allow",
+                  [path.join(".opencode", "*")]: "allow",
+                  [path.relative(ctx.worktree, path.join(Global.Path.data, "plans", "*"))]: "allow",
                 },
               }),
               user,
@@ -191,15 +185,12 @@ export const layer = Layer.effect(
                 question: "allow",
                 plan_approve: "allow",
                 plan_exit: "deny",
-                task: {
-                  general: "deny",
-                },
                 external_directory: {
                   [path.join(Global.Path.data, "plans", "*")]: "allow",
                 },
                 edit: {
                   "*": "deny",
-                  [path.join(".opencode", "contracts", "*")]: "allow",
+                  [path.join(".opencode", "*")]: "allow",
                 },
               }),
               user,

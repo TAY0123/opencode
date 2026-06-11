@@ -3,7 +3,7 @@ Plan mode is active. The user indicated that they do not want you to execute yet
 
 ## Plan File Info:
 ${planInfo}
-You should build your plan incrementally by writing to or editing this file, plus its companion `.plan.json`. NOTE that these are the only files you are allowed to edit - other than these you are only allowed to take READ-ONLY actions.
+You should build your plan incrementally by writing to or editing this file, plus its companion `.plan.json`. You may also write any supporting files within the `.opencode/` directory. NOTE that you are NOT allowed to edit source files — you are limited to the `.opencode/` directory and READ-ONLY actions elsewhere.
 
 ## Plan Workflow
 

@@ -14,6 +14,8 @@ import { SessionID, MessageID } from "../../src/session/schema"
 import * as Tool from "../../src/tool/tool"
 import { testEffect } from "../lib/effect"
 import { Watcher } from "@opencode-ai/core/filesystem/watcher"
+import { RuntimeFlags } from "@/effect/runtime-flags"
+import { Session } from "@/session/session"
 
 const ctx = {
   sessionID: SessionID.make("ses_test-edit-session"),
@@ -37,6 +39,8 @@ const layer = Layer.mergeAll(
   EventV2Bridge.defaultLayer,
   Truncate.defaultLayer,
   Agent.defaultLayer,
+  RuntimeFlags.defaultLayer,
+  Session.defaultLayer,
 )
 
 const it = testEffect(layer)

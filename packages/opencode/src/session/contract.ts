@@ -36,7 +36,7 @@ export const PlanStep = Schema.Struct({
   action: Schema.String,
   target: Schema.String,
   reason: Schema.String,
-  risk: Schema.optional(Schema.Literal("low", "medium", "high")),
+  risk: Schema.optional(Schema.Literals(["low", "medium", "high"])),
 })
 
 export const PlanPhase = Schema.Struct({
@@ -125,7 +125,7 @@ export const checkScope = (allowed: string[], target: string): string[] => {
   return isInScope(target, allowed) ? [] : [target]
 }
 
-function isInScope(target: string, scope: string[]): boolean {
+function isInScope(target: string, scope: readonly string[]): boolean {
   const normalized = target.replace(/\\/g, "/")
   return scope.some((s) => {
     const sn = s.replace(/\\/g, "/")
@@ -164,7 +164,21 @@ export class ScopeViolationError extends Schema.TaggedErrorClass<ScopeViolationE
   }
 }
 
-export const enforceScope = Effect.fn("Contract.enforceScope")(function* (sessionID: SessionID, target: string) {
+export class NoPlanError extends Schema.TaggedErrorClass<NoPlanError>()("NoPlanError", {
+  planPath: Schema.String,
+}) {
+  override get message() {
+    return `No plan.json found. Use the plan agent to create a plan before writing files.`
+  }
+}
+
+export const enforceScope = Effect.fn("Contract.enforceScope")(function* (
+  sessionID: SessionID,
+  target: string,
+  agent: string,
+  options?: { experimentalPlanMode?: boolean },
+) {
+  if (agent === "plan" || agent === "verify") return
   const ctx = yield* InstanceState.context
   const sessions = yield* Session.Service
   const fsys = yield* FSUtil.Service
@@ -172,7 +186,12 @@ export const enforceScope = Effect.fn("Contract.enforceScope")(function* (sessio
   const info = yield* sessions.get(sessionID)
   const planPath = Session.planJson(info, ctx)
   const raw = yield* fsys.readFileStringSafe(planPath)
-  if (!raw) return
+  if (!raw) {
+    if (options?.experimentalPlanMode && agent === "build") {
+      yield* new NoPlanError({ planPath })
+    }
+    return
+  }
 
   const parsed = yield* Effect.try({
     try: () => JSON.parse(raw) as PlanJson,

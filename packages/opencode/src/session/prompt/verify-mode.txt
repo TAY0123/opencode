@@ -7,7 +7,7 @@ ${planInfo}
 ## Verify Workflow
 
 ### Step 1: Load the plan
-Read the `.plan.json` file from the plan directory (same location as the markdown plan indicated under "Plan File Info" — replace `.md` with `.plan.json`). This JSON file contains the structured phase definitions, scopes, and verification commands that drive this validation.
+If a `.plan.json` file exists in the plan directory (same location as the markdown plan indicated under "Plan File Info" — replace `.md` with `.plan.json`), read it to get the structured phase definitions, scopes, and verification commands. If no `.plan.json` exists, proceed with policy validation based on the markdown plan alone.
 
 ### Step 2: Policy validation
 Check each phase against these rules:
@@ -33,5 +33,5 @@ Run each generated contract:
 ### Step 5: Call plan_approve
 Present the verification results and ask the user to confirm progression to build.
 
-**Important:** You are not permitted to edit source files. You can only write to the `.opencode/contracts/` directory.
+**Important:** You are not permitted to edit source files. You can only write to the `.opencode/` directory.
 </system-reminder>

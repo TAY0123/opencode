@@ -19,6 +19,8 @@ import { assertExternalDirectoryEffect } from "./external-directory"
 import { FSUtil } from "@opencode-ai/core/fs-util"
 import * as Bom from "@/util/bom"
 import { Contract } from "@/session/contract"
+import { RuntimeFlags } from "@/effect/runtime-flags"
+import { Session } from "@/session/session"
 
 function normalizeLineEndings(text: string): string {
   return text.replaceAll("\r\n", "\n")
@@ -63,12 +65,37 @@ export const EditTool = Tool.define(
     const afs = yield* FSUtil.Service
     const format = yield* Format.Service
     const events = yield* EventV2Bridge.Service
+    const flags = yield* RuntimeFlags.Service
+    const sessions = yield* Session.Service
 
-    return {
-      description: DESCRIPTION,
-      parameters: Parameters,
-      execute: (params: Schema.Schema.Type<typeof Parameters>, ctx: Tool.Context) =>
-        Effect.gen(function* () {
+    const enforceScope = Effect.fn("EditTool.enforceScope")(function* (filePath: string, ctx: Tool.Context) {
+      if (ctx.agent === "plan" || ctx.agent === "verify") return
+      const instance = yield* InstanceState.context
+      const info = yield* sessions.get(ctx.sessionID)
+      const planPath = Session.planJson(info, instance)
+      const raw = yield* afs.readFileStringSafe(planPath)
+      if (!raw) {
+        if (flags.experimentalPlanMode && ctx.agent === "build") yield* new Contract.NoPlanError({ planPath })
+        return
+      }
+
+      const parsed = yield* Effect.try({
+        try: () => JSON.parse(raw) as Contract.PlanJson,
+        catch: () => undefined,
+      })
+      if (!parsed) return
+
+      const allScopes = parsed.phases.flatMap((phase) => phase.scope)
+      if (allScopes.length === 0) return
+      const relative = path.relative(instance.worktree, filePath)
+      if (Contract.checkScope(allScopes, relative).length === 0) return
+      yield* new Contract.ScopeViolationError({ file: relative, allowedPaths: allScopes })
+    })
+
+    const entered = Effect.fn("EditTool.execute")(function* (
+      params: Schema.Schema.Type<typeof Parameters>,
+      ctx: Tool.Context,
+    ) {
           if (!params.filePath) {
             throw new Error("filePath is required")
           }
@@ -82,7 +109,7 @@ export const EditTool = Tool.define(
             ? params.filePath
             : path.join(instance.directory, params.filePath)
           yield* assertExternalDirectoryEffect(ctx, filePath)
-          yield* Contract.enforceScope(ctx.sessionID, filePath)
+          yield* enforceScope(filePath, ctx).pipe(Effect.orDie)
 
           let diff = ""
           let contentOld = ""
@@ -211,7 +238,13 @@ export const EditTool = Tool.define(
             title: `${path.relative(instance.worktree, filePath)}`,
             output,
           }
-        }),
+    })
+
+    return {
+      description: DESCRIPTION,
+      parameters: Parameters,
+      execute: (params: Schema.Schema.Type<typeof Parameters>, ctx: Tool.Context) =>
+        entered(params, ctx).pipe(Effect.orDie),
     }
   }),
 )

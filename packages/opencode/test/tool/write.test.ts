@@ -13,6 +13,8 @@ import { Agent } from "../../src/agent/agent"
 import { SessionID, MessageID } from "../../src/session/schema"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { disposeAllInstances, TestInstance } from "../fixture/fixture"
+import { RuntimeFlags } from "@/effect/runtime-flags"
+import { Session } from "@/session/session"
 import { testEffect } from "../lib/effect"
 
 const ctx = {
@@ -39,6 +41,8 @@ const it = testEffect(
     CrossSpawnSpawner.defaultLayer,
     Truncate.defaultLayer,
     Agent.defaultLayer,
+    RuntimeFlags.defaultLayer,
+    Session.defaultLayer,
   ),
 )
 

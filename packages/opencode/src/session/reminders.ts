@@ -57,17 +57,20 @@ export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
   const plan = Session.plan(input.session, ctx)
 
   if (current === "verify" && prevAgent === "plan") {
-    const exists = yield* fsys.existsSafe(plan)
-    if (!exists) yield* fsys.ensureDir(path.dirname(plan)).pipe(Effect.catch(Effect.die))
+    const planDir = path.dirname(plan)
+    const planExists = yield* fsys.existsSafe(plan)
+    if (!planExists) yield* fsys.ensureDir(planDir).pipe(Effect.catch(Effect.die))
+    const planJson = plan.replace(/\.md$/, ".plan.json")
+    const planJsonExists = yield* fsys.existsSafe(planJson)
     const part = yield* sessions.updatePart({
       id: PartID.ascending(),
       messageID: userMessage.info.id,
       sessionID: userMessage.info.sessionID,
       type: "text",
       text: VERIFY_MODE.replace("${planInfo}", () =>
-        exists
-          ? `A plan file exists at ${plan}. Read the plan.json and validate it.`
-          : `No plan file exists. Wait for the plan agent to create one.`,
+        planJsonExists
+          ? `A plan.json file exists at ${planJson}. Read it and validate it.`
+          : `No plan.json file exists. Validate the markdown plan at ${plan} against policy rules.`,
       ),
       synthetic: true,
     })
@@ -76,14 +79,15 @@ export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
   }
 
   if (current !== "plan" && current !== "verify" && (prevAgent === "plan" || prevAgent === "verify")) {
-    const exists = yield* fsys.existsSafe(plan)
+    const planJson = plan.replace(/\.md$/, ".plan.json")
+    const planJsonExists = yield* fsys.existsSafe(planJson)
     const part = yield* sessions.updatePart({
       id: PartID.ascending(),
       messageID: userMessage.info.id,
       sessionID: userMessage.info.sessionID,
       type: "text",
-      text: exists
-        ? `${BUILD_SWITCH}\n\nA plan file exists at ${plan}. Read the plan.json for phase scopes and execute phase by phase.`
+      text: planJsonExists
+        ? `${BUILD_SWITCH}\n\nA plan.json file exists at ${planJson}. Read it for phase scopes and execute phase by phase.`
         : BUILD_SWITCH,
       synthetic: true,
     })
@@ -93,16 +97,17 @@ export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
 
   if (current !== "plan" || prevAgent === "plan") return input.messages
 
-  const exists = yield* fsys.existsSafe(plan)
-  if (!exists) yield* fsys.ensureDir(path.dirname(plan)).pipe(Effect.catch(Effect.die))
+  const planDir = path.dirname(plan)
+  const planExists = yield* fsys.existsSafe(plan)
+  if (!planExists) yield* fsys.ensureDir(planDir).pipe(Effect.catch(Effect.die))
   const part = yield* sessions.updatePart({
     id: PartID.ascending(),
     messageID: userMessage.info.id,
     sessionID: userMessage.info.sessionID,
     type: "text",
     text: PLAN_MODE.replace("${planInfo}", () =>
-      exists
-        ? `A plan file already exists at ${plan}. You can read it and make incremental edits using the edit tool.`
+      planExists
+        ? `A plan file already exists at ${plan}. You can read it and make incremental edits.`
         : `No plan file exists yet. You should create your plan at ${plan} using the write tool.`,
     ),
     synthetic: true,

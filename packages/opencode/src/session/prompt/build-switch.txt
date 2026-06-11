@@ -5,7 +5,7 @@ You are permitted to make file changes, run shell commands, and utilize your ars
 
 ## Phase-by-Phase Execution
 
-Read the plan.json file for the structured phase definitions. Execute phases in order.
+Read the plan.json file for structured phase definitions. Execute phases in order.
 
 ### For each phase:
 
