@@ -151,6 +151,7 @@ export const Plugin = PluginV2.define({
               resource: path.join(".opencode", "plans", "*.plan.json"),
               effect: "allow",
             },
+            { action: "edit", resource: path.join(".opencode", "contracts", "*"), effect: "allow" },
             {
               action: "edit",
               resource: path.relative(worktree, path.join(Global.Path.data, "plans", "*.md")),
@@ -175,7 +176,7 @@ export const Plugin = PluginV2.define({
             { action: "plan_exit", resource: "*", effect: "deny" },
             { action: "external_directory", resource: path.join(Global.Path.data, "plans", "*"), effect: "allow" },
             { action: "edit", resource: "*", effect: "deny" },
-            { action: "edit", resource: path.join("contracts", "*"), effect: "allow" },
+            { action: "edit", resource: path.join(".opencode", "contracts", "*"), effect: "allow" },
           ]),
         )
       })

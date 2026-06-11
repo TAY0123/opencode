@@ -7,7 +7,7 @@ ${planInfo}
 ## Verify Workflow
 
 ### Step 1: Load the plan
-Read the plan.json file to understand the planned phases, scopes, and verification commands.
+Read the `.plan.json` file from the plan directory (same location as the markdown plan indicated under "Plan File Info" — replace `.md` with `.plan.json`). This JSON file contains the structured phase definitions, scopes, and verification commands that drive this validation.
 
 ### Step 2: Policy validation
 Check each phase against these rules:
@@ -19,7 +19,7 @@ Check each phase against these rules:
 - **EDIT_WITHOUT_VERIFICATION**: phases with edit_file actions must have verification_commands or test/lint steps
 
 ### Step 3: Generate contracts
-For each phase, generate a TypeScript contract file at `contracts/plan_<date>_<phaseID>.ts` that validates:
+For each phase, generate a TypeScript contract file at `.opencode/contracts/plan_<date>_<phaseID>.ts` that validates:
 - **Pre-condition**: files listed in the phase's scope exist (skip files that don't exist yet — they will be created during the phase)
 - **Post-condition**: the phase's verification commands have been executed and pass (exit code 0)
 
@@ -33,5 +33,5 @@ Run each generated contract:
 ### Step 5: Call plan_approve
 Present the verification results and ask the user to confirm progression to build.
 
-**Important:** You are not permitted to edit source files. You can only write to the `contracts/` directory.
+**Important:** You are not permitted to edit source files. You can only write to the `.opencode/contracts/` directory.
 </system-reminder>

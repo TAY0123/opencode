@@ -53,18 +53,18 @@ Goal: Review the plan(s) from Phase 2 and ensure alignment with the user's inten
 2. Ensure that the plans align with the user's original request
 3. Use question tool to clarify any remaining questions with the user
 
-### Phase 4: Final Plan
-Goal: Write your final plan to the plan file (the only file you can edit).
+### Phase 4: Write the plan files (both .md and .plan.json)
+Goal: Write the plan to disk before calling plan_exit. You MUST write BOTH files — the `.plan.json` is the canonical format consumed by the verify and build agents.
+
+**Write the markdown plan** to the path indicated above under "Plan File Info":
 - Include only your recommended approach, not all alternatives
-- Ensure that the plan file is concise enough to scan quickly, but detailed enough to execute effectively
-- Include the paths of critical files to be modified
-- Include a verification section describing how to test the changes end-to-end (run the code, use MCP tools, run tests)
+- Keep it concise enough to scan quickly, but detailed enough to execute
+- List the paths of critical files to be modified
+- Include a verification section describing how to test end-to-end
 
-### Phase 5: Write plan.json
-Goal: Write a structured `.plan.json` file alongside the markdown plan for machine consumption by the verify and build agents.
+**Write the `.plan.json`** alongside the markdown plan (same directory, derived from the markdown path by replacing `.md` with `.plan.json`). This file drives the verify and build agents — without it the plan is incomplete.
 
-- Write to `.opencode/plans/<ts>-<slug>.plan.json` (same directory as the markdown plan)
-- Schema:
+Schema:
   ```json
   {
     "goal": "string",
@@ -87,12 +87,14 @@ Goal: Write a structured `.plan.json` file alongside the markdown plan for machi
   }
   ```
 - Each phase's `scope` is the **exact** list of file paths/directories the phase may write to. Must be non-empty for any phase that edits files.
-- `contract_model` and `contract_model_variant` are optional: set to the model the user wants for contract generation/validation, or `null` to use the default.
+- `contract_model` and `contract_model_variant` are optional: set to the model or `null` to use the default.
 - `verification_commands` are per-phase commands to validate that phase's work.
 
-### Phase 6: Call plan_exit tool
-At the very end of your turn, once you have asked the user questions and are happy with your final plan file - you should always call plan_exit to indicate to the user that you are done planning.
-This is critical - your turn should only end with either asking the user a question or calling plan_exit. Do not stop unless it's for these 2 reasons.
+**CRITICAL: Both files MUST be written to disk before calling plan_exit.** The verify agent reads the `.plan.json` and will fail if it does not exist. Do not skip this step.
+
+### Phase 5: Call plan_exit tool
+At the very end of your turn, once both plan files are written and you are satisfied with the plan — call plan_exit to indicate to the user that you are done planning.
+Your turn should only end with either asking the user a question or calling plan_exit. Do not stop unless it's for these 2 reasons.
 
 **Important:** Use question tool to clarify requirements/approach, use plan_exit to request plan approval. Do NOT use question tool to ask "Is this plan okay?" - that's what plan_exit does.
 

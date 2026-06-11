@@ -1,4 +1,4 @@
-import { Effect, Stream } from "effect"
+import { Effect, Scope, Stream } from "effect"
 import os from "os"
 import { createWriteStream } from "node:fs"
 import * as Tool from "./tool"
@@ -21,6 +21,9 @@ import { ChildProcess } from "effect/unstable/process"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { ShellPrompt, type Parameters } from "./shell/prompt"
 import { BashArity } from "@/permission/arity"
+import { BackgroundJob } from "@/background/job"
+import { MessageID } from "../session/schema"
+import { Session } from "@/session/session"
 
 export { Parameters } from "./shell/prompt"
 
