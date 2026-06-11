@@ -381,6 +381,10 @@ export function plan(input: { slug: string; time: { created: number } }, instanc
   return path.join(base, [input.time.created, input.slug].join("-") + ".md")
 }
 
+export function planJson(input: { slug: string; time: { created: number } }, instance: InstanceContext) {
+  return plan(input, instance).replace(/\.md$/, ".plan.json")
+}
+
 export const getUsage = (input: { model: Provider.Model; usage: Usage; metadata?: ProviderMetadata }) => {
   const safe = (value: number) => {
     if (!Number.isFinite(value)) return 0

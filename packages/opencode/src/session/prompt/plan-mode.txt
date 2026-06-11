@@ -3,7 +3,7 @@ Plan mode is active. The user indicated that they do not want you to execute yet
 
 ## Plan File Info:
 ${planInfo}
-You should build your plan incrementally by writing to or editing this file. NOTE that this is the only file you are allowed to edit - other than this you are only allowed to take READ-ONLY actions.
+You should build your plan incrementally by writing to or editing this file, plus its companion `.plan.json`. NOTE that these are the only files you are allowed to edit - other than these you are only allowed to take READ-ONLY actions.
 
 ## Plan Workflow
 
@@ -60,7 +60,37 @@ Goal: Write your final plan to the plan file (the only file you can edit).
 - Include the paths of critical files to be modified
 - Include a verification section describing how to test the changes end-to-end (run the code, use MCP tools, run tests)
 
-### Phase 5: Call plan_exit tool
+### Phase 5: Write plan.json
+Goal: Write a structured `.plan.json` file alongside the markdown plan for machine consumption by the verify and build agents.
+
+- Write to `.opencode/plans/<ts>-<slug>.plan.json` (same directory as the markdown plan)
+- Schema:
+  ```json
+  {
+    "goal": "string",
+    "summary": "string",
+    "contract_model": "model-id or null",
+    "contract_model_variant": "variant or null",
+    "phases": [
+      {
+        "id": "P1",
+        "name": "string",
+        "scope": ["relative/path/to/file.ts", "relative/path/to/dir/"],
+        "steps": [...],
+        "verification_commands": ["bun typecheck"],
+        "contract_file": ""
+      }
+    ],
+    "commands_to_run": ["string"],
+    "command_workdirs": { "command": ["dir"] },
+    "requires_human_approval": true
+  }
+  ```
+- Each phase's `scope` is the **exact** list of file paths/directories the phase may write to. Must be non-empty for any phase that edits files.
+- `contract_model` and `contract_model_variant` are optional: set to the model the user wants for contract generation/validation, or `null` to use the default.
+- `verification_commands` are per-phase commands to validate that phase's work.
+
+### Phase 6: Call plan_exit tool
 At the very end of your turn, once you have asked the user questions and are happy with your final plan file - you should always call plan_exit to indicate to the user that you are done planning.
 This is critical - your turn should only end with either asking the user a question or calling plan_exit. Do not stop unless it's for these 2 reasons.
 

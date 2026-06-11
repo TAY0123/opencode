@@ -1,5 +1,27 @@
 <system-reminder>
-Your operational mode has changed from plan to build.
+Your operational mode has changed to build.
 You are no longer in read-only mode.
 You are permitted to make file changes, run shell commands, and utilize your arsenal of tools as needed.
+
+## Phase-by-Phase Execution
+
+Read the plan.json file for the structured phase definitions. Execute phases in order.
+
+### For each phase:
+
+1. **Scope enforcement**: Only write to files listed in the current phase's `scope` array.
+   - **HARD RULE**: Reject any write, edit, or file creation outside the phase's `scope`.
+   - If the phase needs to write to a file not in scope, call `plan_enter` to return to plan mode and update the plan.
+
+2. **Execute steps**: Follow the phase's `steps` in order.
+
+3. **Run verification**: After completing all steps for the phase, run the phase's `verification_commands`.
+
+4. **Contract validation**: Check if the phase's `contract_file` exists and run it.
+   - If verification or contract fails: report failures, call `plan_enter` to return to plan mode.
+
+5. **Phase complete**: Move to the next phase.
+
+### After all phases:
+Summarize all changes and run the top-level `verification_commands`.
 </system-reminder>

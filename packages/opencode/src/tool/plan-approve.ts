@@ -4,23 +4,22 @@ import { Effect, Schema } from "effect"
 import * as Tool from "./tool"
 import { Question } from "../question"
 import { Session } from "@/session/session"
-import { MessageV2 } from "../session/message-v2"
 import { Provider } from "@/provider/provider"
 import { InstanceState } from "@/effect/instance-state"
 import { MessageID, PartID } from "../session/schema"
-import EXIT_DESCRIPTION from "./plan-exit.txt"
+import APPROVE_DESCRIPTION from "./plan-approve.txt"
 
 export const Parameters = Schema.Struct({})
 
-export const PlanExitTool = Tool.define(
-  "plan_exit",
+export const PlanApproveTool = Tool.define(
+  "plan_approve",
   Effect.gen(function* () {
     const session = yield* Session.Service
     const question = yield* Question.Service
     const provider = yield* Provider.Service
 
     return {
-      description: EXIT_DESCRIPTION,
+      description: APPROVE_DESCRIPTION,
       parameters: Parameters,
       execute: (_params: {}, ctx: Tool.Context) =>
         Effect.gen(function* () {
@@ -31,31 +30,55 @@ export const PlanExitTool = Tool.define(
             sessionID: ctx.sessionID,
             questions: [
               {
-                question: `Plan at ${plan} is complete. Would you like to proceed to the verify phase to validate the plan against policy and generate contracts?`,
-                header: "Verify Agent",
+                question: `Plan at ${plan} has been verified and contracts generated. Would you like to proceed to build and start implementing?`,
+                header: "Build Agent",
                 custom: false,
                 options: [
-                  { label: "Yes", description: "Proceed to verify agent to validate the plan and generate contracts" },
-                  { label: "No", description: "Stay with plan agent to continue refining the plan" },
+                  { label: "Yes", description: "Switch to build agent and start implementing the plan" },
+                  { label: "No", description: "Return to plan agent to revise the plan" },
                 ],
               },
             ],
             tool: ctx.callID ? { messageID: ctx.messageID, callID: ctx.callID } : undefined,
           })
 
-          if (answers[0]?.[0] === "No") yield* new Question.RejectedError()
-
           const messages = yield* session.messages({ sessionID: ctx.sessionID }).pipe(Effect.orDie)
           const lastUser = messages.findLast((item) => item.info.role === "user" && item.info.model)
           const model =
             lastUser?.info.role === "user" && lastUser.info.model ? lastUser.info.model : yield* provider.defaultModel()
+
+          if (answers[0]?.[0] === "Yes") {
+            const msg: SessionV1.User = {
+              id: MessageID.ascending(),
+              sessionID: ctx.sessionID,
+              role: "user",
+              time: { created: Date.now() },
+              agent: "build",
+              model,
+            }
+            yield* session.updateMessage(msg)
+            yield* session.updatePart({
+              id: PartID.ascending(),
+              messageID: msg.id,
+              sessionID: ctx.sessionID,
+              type: "text",
+              text: `The plan at ${plan} has been verified and approved. Execute the plan phase by phase, respecting each phase's scope.`,
+              synthetic: true,
+            } satisfies SessionV1.TextPart)
+
+            return {
+              title: "Switching to build agent",
+              output: "User approved switching to build agent. Wait for further instructions.",
+              metadata: {},
+            }
+          }
 
           const msg: SessionV1.User = {
             id: MessageID.ascending(),
             sessionID: ctx.sessionID,
             role: "user",
             time: { created: Date.now() },
-            agent: "verify",
+            agent: "plan",
             model,
           }
           yield* session.updateMessage(msg)
@@ -64,13 +87,13 @@ export const PlanExitTool = Tool.define(
             messageID: msg.id,
             sessionID: ctx.sessionID,
             type: "text",
-            text: `The plan at ${plan} has been approved. Validate the plan against policy, generate contracts, and ask the user to approve the build.`,
+            text: "User chose to revise the plan. Review the verification failures and update the plan accordingly.",
             synthetic: true,
           } satisfies SessionV1.TextPart)
 
           return {
-            title: "Switching to verify agent",
-            output: "User approved switching to verify agent. Wait for further instructions.",
+            title: "Returning to plan agent",
+            output: "User chose to return to plan agent.",
             metadata: {},
           }
         }).pipe(Effect.orDie),

@@ -124,6 +124,7 @@ export const layer = Layer.effect(
           question: "deny",
           plan_enter: "deny",
           plan_exit: "deny",
+          plan_approve: "deny",
           // mirrors github.com/github/gitignore Node.gitignore pattern for .env files
           read: {
             "*": "allow",
@@ -169,7 +170,35 @@ export const layer = Layer.effect(
                 edit: {
                   "*": "deny",
                   [path.join(".opencode", "plans", "*.md")]: "allow",
+                  [path.join(".opencode", "plans", "*.plan.json")]: "allow",
                   [path.relative(ctx.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
+                  [path.relative(ctx.worktree, path.join(Global.Path.data, path.join("plans", "*.plan.json")))]: "allow",
+                },
+              }),
+              user,
+            ),
+            mode: "primary",
+            native: true,
+          },
+          verify: {
+            name: "verify",
+            description: "Verify mode. Validates plans against policy and generates contracts before build.",
+            options: {},
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                question: "allow",
+                plan_approve: "allow",
+                plan_exit: "deny",
+                task: {
+                  general: "deny",
+                },
+                external_directory: {
+                  [path.join(Global.Path.data, "plans", "*")]: "allow",
+                },
+                edit: {
+                  "*": "deny",
+                  [path.join("contracts", "*")]: "allow",
                 },
               }),
               user,

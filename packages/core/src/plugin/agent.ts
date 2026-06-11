@@ -116,6 +116,7 @@ export const Plugin = PluginV2.define({
       { action: "question", resource: "*", effect: "deny" },
       { action: "plan_enter", resource: "*", effect: "deny" },
       { action: "plan_exit", resource: "*", effect: "deny" },
+      { action: "plan_approve", resource: "*", effect: "deny" },
       { action: "read", resource: "*", effect: "allow" },
       { action: "read", resource: "*.env", effect: "ask" },
       { action: "read", resource: "*.env.*", effect: "ask" },
@@ -147,9 +148,34 @@ export const Plugin = PluginV2.define({
             { action: "edit", resource: path.join(".opencode", "plans", "*.md"), effect: "allow" },
             {
               action: "edit",
+              resource: path.join(".opencode", "plans", "*.plan.json"),
+              effect: "allow",
+            },
+            {
+              action: "edit",
               resource: path.relative(worktree, path.join(Global.Path.data, "plans", "*.md")),
               effect: "allow",
             },
+            {
+              action: "edit",
+              resource: path.relative(worktree, path.join(Global.Path.data, "plans", "*.plan.json")),
+              effect: "allow",
+            },
+          ]),
+        )
+      })
+
+      editor.update(AgentV2.ID.make("verify"), (item) => {
+        item.description = "Verify mode. Validates plans against policy and generates contracts before build."
+        item.mode = "primary"
+        item.permissions.push(
+          ...PermissionV2.merge(defaults, [
+            { action: "question", resource: "*", effect: "allow" },
+            { action: "plan_approve", resource: "*", effect: "allow" },
+            { action: "plan_exit", resource: "*", effect: "deny" },
+            { action: "external_directory", resource: path.join(Global.Path.data, "plans", "*"), effect: "allow" },
+            { action: "edit", resource: "*", effect: "deny" },
+            { action: "edit", resource: path.join("contracts", "*"), effect: "allow" },
           ]),
         )
       })

@@ -4,23 +4,22 @@ import { Effect, Schema } from "effect"
 import * as Tool from "./tool"
 import { Question } from "../question"
 import { Session } from "@/session/session"
-import { MessageV2 } from "../session/message-v2"
 import { Provider } from "@/provider/provider"
 import { InstanceState } from "@/effect/instance-state"
 import { MessageID, PartID } from "../session/schema"
-import EXIT_DESCRIPTION from "./plan-exit.txt"
+import ENTER_DESCRIPTION from "./plan-enter.txt"
 
 export const Parameters = Schema.Struct({})
 
-export const PlanExitTool = Tool.define(
-  "plan_exit",
+export const PlanEnterTool = Tool.define(
+  "plan_enter",
   Effect.gen(function* () {
     const session = yield* Session.Service
     const question = yield* Question.Service
     const provider = yield* Provider.Service
 
     return {
-      description: EXIT_DESCRIPTION,
+      description: ENTER_DESCRIPTION,
       parameters: Parameters,
       execute: (_params: {}, ctx: Tool.Context) =>
         Effect.gen(function* () {
@@ -31,12 +30,12 @@ export const PlanExitTool = Tool.define(
             sessionID: ctx.sessionID,
             questions: [
               {
-                question: `Plan at ${plan} is complete. Would you like to proceed to the verify phase to validate the plan against policy and generate contracts?`,
-                header: "Verify Agent",
+                question: "Return to plan mode to revise the plan?",
+                header: "Plan Agent",
                 custom: false,
                 options: [
-                  { label: "Yes", description: "Proceed to verify agent to validate the plan and generate contracts" },
-                  { label: "No", description: "Stay with plan agent to continue refining the plan" },
+                  { label: "Yes", description: "Return to plan agent to revise the plan" },
+                  { label: "No", description: "Stay in build mode and continue" },
                 ],
               },
             ],
@@ -55,7 +54,7 @@ export const PlanExitTool = Tool.define(
             sessionID: ctx.sessionID,
             role: "user",
             time: { created: Date.now() },
-            agent: "verify",
+            agent: "plan",
             model,
           }
           yield* session.updateMessage(msg)
@@ -64,13 +63,13 @@ export const PlanExitTool = Tool.define(
             messageID: msg.id,
             sessionID: ctx.sessionID,
             type: "text",
-            text: `The plan at ${plan} has been approved. Validate the plan against policy, generate contracts, and ask the user to approve the build.`,
+            text: `The plan at ${plan} needs revision. Review the failures and update the plan.`,
             synthetic: true,
           } satisfies SessionV1.TextPart)
 
           return {
-            title: "Switching to verify agent",
-            output: "User approved switching to verify agent. Wait for further instructions.",
+            title: "Returning to plan agent",
+            output: "Returning to plan agent to revise the plan.",
             metadata: {},
           }
         }).pipe(Effect.orDie),

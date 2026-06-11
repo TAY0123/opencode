@@ -11,6 +11,7 @@ import { Session } from "./session"
 import PROMPT_PLAN from "./prompt/plan.txt"
 import BUILD_SWITCH from "./prompt/build-switch.txt"
 import PLAN_MODE from "./prompt/plan-mode.txt"
+import VERIFY_MODE from "./prompt/verify-mode.txt"
 
 export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
   messages: SessionV1.WithParts[]
@@ -49,9 +50,32 @@ export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
   }
 
   const assistantMessage = input.messages.findLast((msg) => msg.info.role === "assistant")
-  if (input.agent.name !== "plan" && assistantMessage?.info.agent === "plan") {
-    const ctx = yield* InstanceState.context
-    const plan = Session.plan(input.session, ctx)
+  const prevAgent = assistantMessage?.info.agent
+  const current = input.agent.name
+
+  const ctx = yield* InstanceState.context
+  const plan = Session.plan(input.session, ctx)
+
+  if (current === "verify" && prevAgent === "plan") {
+    const exists = yield* fsys.existsSafe(plan)
+    if (!exists) yield* fsys.ensureDir(path.dirname(plan)).pipe(Effect.catch(Effect.die))
+    const part = yield* sessions.updatePart({
+      id: PartID.ascending(),
+      messageID: userMessage.info.id,
+      sessionID: userMessage.info.sessionID,
+      type: "text",
+      text: VERIFY_MODE.replace("${planInfo}", () =>
+        exists
+          ? `A plan file exists at ${plan}. Read the plan.json and validate it.`
+          : `No plan file exists. Wait for the plan agent to create one.`,
+      ),
+      synthetic: true,
+    })
+    userMessage.parts.push(part)
+    return input.messages
+  }
+
+  if (current !== "plan" && current !== "verify" && (prevAgent === "plan" || prevAgent === "verify")) {
     const exists = yield* fsys.existsSafe(plan)
     const part = yield* sessions.updatePart({
       id: PartID.ascending(),
@@ -59,7 +83,7 @@ export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
       sessionID: userMessage.info.sessionID,
       type: "text",
       text: exists
-        ? `${BUILD_SWITCH}\n\nA plan file exists at ${plan}. You should execute on the plan defined within it`
+        ? `${BUILD_SWITCH}\n\nA plan file exists at ${plan}. Read the plan.json for phase scopes and execute phase by phase.`
         : BUILD_SWITCH,
       synthetic: true,
     })
@@ -67,10 +91,8 @@ export const apply = Effect.fn("SessionReminders.apply")(function* (input: {
     return input.messages
   }
 
-  if (input.agent.name !== "plan" || assistantMessage?.info.agent === "plan") return input.messages
+  if (current !== "plan" || prevAgent === "plan") return input.messages
 
-  const ctx = yield* InstanceState.context
-  const plan = Session.plan(input.session, ctx)
   const exists = yield* fsys.existsSafe(plan)
   if (!exists) yield* fsys.ensureDir(path.dirname(plan)).pipe(Effect.catch(Effect.die))
   const part = yield* sessions.updatePart({
