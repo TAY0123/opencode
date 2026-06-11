@@ -99,13 +99,20 @@ XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash
 
 ### Agents
 
-OpenCode includes two built-in agents you can switch between with the `Tab` key.
+OpenCode includes three built-in agents you can switch between with the `Tab` key.
 
 - **build** - Default, full-access agent for development work
-- **plan** - Read-only agent for analysis and code exploration
-  - Denies file edits by default
-  - Asks permission before running bash commands
-  - Ideal for exploring unfamiliar codebases or planning changes
+- **plan** - Read-only agent for creating structured implementation plans
+  - Writes only to `.opencode/` — cannot modify source files
+  - Produces `.plan.json` with phases, scopes, and verification commands
+- **verify** - Validates plans against policy and generates TypeScript contracts
+
+These agents form a **plan → verify → build** pipeline: `plan` designs the implementation, `verify` validates it, and `build` executes it phase-by-phase with scope enforcement.
+
+Handoff uses three tools: `plan_exit` (plan → verify), `plan_approve` (verify → build), and `plan_enter` (build → plan for revisions).
+
+> [!NOTE]
+> The plan mode workflow is experimental and gated behind `OPENCODE_EXPERIMENTAL_PLAN_MODE=true` (or `OPENCODE_EXPERIMENTAL=true`).
 
 Also included is a **general** subagent for complex searches and multistep tasks.
 This is used internally and can be invoked using `@general` in messages.
