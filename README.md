@@ -114,6 +114,40 @@ Handoff uses three tools: `plan_exit` (plan → verify), `plan_approve` (verify 
 > [!NOTE]
 > The plan mode workflow is experimental and gated behind `OPENCODE_EXPERIMENTAL_PLAN_MODE=true` (or `OPENCODE_EXPERIMENTAL=true`).
 
+Each plan produces a `.plan.json` that defines phases with scoped file access, ordered steps, and verification commands. The build agent is blocked from writing outside declared scopes.
+
+```jsonc
+// .opencode/plans/my-plan.plan.json
+{
+  "goal": "Add dark mode toggle",
+  "summary": "...",
+  "phases": [{
+    "id": "P1",
+    "name": "Add toggle component",
+    "scope": ["src/components/DarkModeToggle.tsx"],
+    "steps": [
+      { "id": "create-toggle", "action": "edit_file", "target": "src/components/DarkModeToggle.tsx", "reason": "New component" }
+    ],
+    "verification_commands": ["npm test"],
+    "contract_file": ""
+  }],
+  "requires_human_approval": true
+}
+```
+
+The verify agent generates a TypeScript contract per phase to validate pre-conditions (files in scope exist) and post-conditions (verification commands pass):
+
+```ts
+// .opencode/contracts/plan_20260101_P1.ts
+import { existsSync } from "node:fs"
+import { execSync } from "node:child_process"
+
+for (const file of ["src/components/DarkModeToggle.tsx"]) {
+  if (!existsSync(file)) process.exit(1)
+}
+execSync("npm test")
+```
+
 Also included is a **general** subagent for complex searches and multistep tasks.
 This is used internally and can be invoked using `@general` in messages.
 
