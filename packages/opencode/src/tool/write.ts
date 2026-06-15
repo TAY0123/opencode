@@ -44,7 +44,12 @@ export const WriteTool = Tool.define(
       const planPath = Session.planJson(info, instance)
       const raw = yield* fs.readFileStringSafe(planPath)
       if (!raw) {
-        if (flags.experimentalPlanMode && ctx.agent === "build") yield* new Contract.NoPlanError({ planPath })
+        if (flags.experimentalPlanMode && ctx.agent === "build") {
+          const hasPlanHistory = ctx.messages.some(
+            (m) => m.info.agent === "plan" || m.info.agent === "verify",
+          )
+          if (hasPlanHistory) yield* new Contract.NoPlanError({ planPath })
+        }
         return
       }
 
