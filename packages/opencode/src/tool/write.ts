@@ -54,9 +54,14 @@ export const WriteTool = Tool.define(
       })
       if (!parsed) return
 
-      const allScopes = parsed.phases.flatMap((phase) => phase.scope)
-      if (allScopes.length === 0) return
       const relative = path.relative(instance.worktree, filepath)
+      if (relative === ".opencode" || relative.startsWith(".opencode/")) return
+
+      const allScopesRaw = parsed.phases.flatMap((phase) => phase.scope)
+      if (allScopesRaw.length === 0) return
+      const allScopes = allScopesRaw.map((s) =>
+        path.isAbsolute(s) ? path.relative(instance.worktree, s) : s,
+      )
       if (Contract.checkScope(allScopes, relative).length === 0) return
       yield* new Contract.ScopeViolationError({ file: relative, allowedPaths: allScopes })
     })

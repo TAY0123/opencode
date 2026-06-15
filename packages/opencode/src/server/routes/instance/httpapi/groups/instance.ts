@@ -23,6 +23,10 @@ const PathInfo = Schema.Struct({
   directory: Schema.String,
 }).annotate({ identifier: "Path" })
 
+const PlanAutoRetryInfo = Schema.Struct({
+  enabled: Schema.Boolean,
+}).annotate({ identifier: "PlanAutoRetry" })
+
 export const VcsDiffQuery = Schema.Struct({
   ...WorkspaceRoutingQueryFields,
   mode: Vcs.Mode,
@@ -49,6 +53,8 @@ export const InstancePaths = {
   vcsDiffRaw: "/vcs/diff/raw",
   vcsApply: "/vcs/apply",
   command: "/command",
+  planAutoRetry: "/plan-auto-retry",
+  planAutoRetryToggle: "/plan-auto-retry/toggle",
   agent: "/agent",
   skill: "/skill",
   lsp: "/lsp",
@@ -144,6 +150,26 @@ export const InstanceApi = HttpApi.make("instance")
             identifier: "command.list",
             summary: "List commands",
             description: "Get a list of all available commands in the OpenCode system.",
+          }),
+        ),
+        HttpApiEndpoint.get("planAutoRetry", InstancePaths.planAutoRetry, {
+          query: WorkspaceRoutingQuery,
+          success: described(PlanAutoRetryInfo, "Plan auto retry state"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "planAutoRetry.get",
+            summary: "Get plan auto retry state",
+            description: "Get whether plan auto retry is currently enabled.",
+          }),
+        ),
+        HttpApiEndpoint.post("planAutoRetryToggle", InstancePaths.planAutoRetryToggle, {
+          query: WorkspaceRoutingQuery,
+          success: described(PlanAutoRetryInfo, "Plan auto retry state"),
+        }).annotateMerge(
+          OpenApi.annotations({
+            identifier: "planAutoRetry.toggle",
+            summary: "Toggle plan auto retry",
+            description: "Toggle whether plan/verify/build failures automatically return to plan mode.",
           }),
         ),
         HttpApiEndpoint.get("agent", InstancePaths.agent, {

@@ -128,6 +128,7 @@ const appBindingCommands = [
   "app.toggle.file_context",
   "app.toggle.diffwrap",
   "app.toggle.paste_summary",
+  "app.toggle.plan_auto_retry",
   "app.toggle.session_directory_filter",
 ] as const
 
@@ -903,6 +904,19 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
             const next = !prev
             kv.set("paste_summary_enabled", next)
             return next
+          })
+          dialog.clear()
+        },
+      },
+      {
+        name: "app.toggle.plan_auto_retry",
+        title: "Toggle plan auto retry",
+        category: "System",
+        run: async () => {
+          const result = await sdk.client.planAutoRetry.toggle({ workspace: project.workspace.current() ?? undefined })
+          toast.show({
+            message: result.data?.enabled ? "Plan auto retry enabled" : "Plan auto retry disabled",
+            variant: "info",
           })
           dialog.clear()
         },

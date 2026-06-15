@@ -129,6 +129,10 @@ import type {
   PermissionRespondResponses,
   PermissionRuleset,
   PermissionV2Reply,
+  PlanAutoRetryGetErrors,
+  PlanAutoRetryGetResponses,
+  PlanAutoRetryToggleErrors,
+  PlanAutoRetryToggleResponses,
   ProjectCurrentErrors,
   ProjectCurrentResponses,
   ProjectDirectoriesErrors,
@@ -2154,6 +2158,70 @@ export class Command extends HeyApiClient {
       ...options,
       ...params,
     })
+  }
+}
+
+export class PlanAutoRetry extends HeyApiClient {
+  /**
+   * Get plan auto retry state
+   *
+   * Get whether plan auto retry is currently enabled.
+   */
+  public get<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<PlanAutoRetryGetResponses, PlanAutoRetryGetErrors, ThrowOnError>({
+      url: "/plan-auto-retry",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Toggle plan auto retry
+   *
+   * Toggle whether plan/verify/build failures automatically return to plan mode.
+   */
+  public toggle<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<PlanAutoRetryToggleResponses, PlanAutoRetryToggleErrors, ThrowOnError>(
+      {
+        url: "/plan-auto-retry/toggle",
+        ...options,
+        ...params,
+      },
+    )
   }
 }
 
@@ -5911,6 +5979,11 @@ export class OpencodeClient extends HeyApiClient {
   private _command?: Command
   get command(): Command {
     return (this._command ??= new Command({ client: this.client }))
+  }
+
+  private _planAutoRetry?: PlanAutoRetry
+  get planAutoRetry(): PlanAutoRetry {
+    return (this._planAutoRetry ??= new PlanAutoRetry({ client: this.client }))
   }
 
   private _lsp?: Lsp

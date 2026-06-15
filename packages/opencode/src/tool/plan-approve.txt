@@ -1,1 +1,1 @@
-Call this when you are done verifying the plan and are ready to transition to the build agent. Reports verification results and asks the user whether to proceed to build or return to plan.
+Call this when you are done verifying the plan and are ready to transition to the build agent. Pass `passed: true` if all contracts and policy checks passed; pass `passed: false` if there were violations or failures. When verification passes, the tool auto-transitions to build without prompting the user.

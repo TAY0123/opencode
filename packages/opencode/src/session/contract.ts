@@ -199,10 +199,14 @@ export const enforceScope = Effect.fn("Contract.enforceScope")(function* (
   })
   if (!parsed) return
 
-  const allScopes = parsed.phases.flatMap((phase) => phase.scope)
-  if (allScopes.length === 0) return
-
   const relative = path.relative(ctx.worktree, target)
+  if (relative === ".opencode" || relative.startsWith(".opencode/")) return
+
+  const allScopesRaw = parsed.phases.flatMap((phase) => phase.scope)
+  if (allScopesRaw.length === 0) return
+  const allScopes = allScopesRaw.map((s) =>
+    path.isAbsolute(s) ? path.relative(ctx.worktree, s) : s,
+  )
   if (isInScope(relative, allScopes)) return
 
   yield* new ScopeViolationError({ file: relative, allowedPaths: allScopes })

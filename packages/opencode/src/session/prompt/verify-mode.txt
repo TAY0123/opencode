@@ -27,11 +27,14 @@ Use the plan's `contract_model` and `contract_model_variant` settings if set, ot
 
 ### Step 4: Validate contracts
 Run each generated contract:
-- If all contracts pass: present summary and call `plan_approve`
-- If any contract fails: report violations, suggest fixes, call `plan_approve` (user may still approve or return to plan)
+- If all contracts pass: call `plan_approve` with `passed: true`
+- If any contract fails: report violations, suggest fixes, call `plan_approve` with `passed: false`
 
 ### Step 5: Call plan_approve
-Present the verification results and ask the user to confirm progression to build.
+Call `plan_approve` with the appropriate `passed` parameter:
+- `passed: true` when all contracts and policy checks passed
+- `passed: false` when there were violations or failures
+The `plan_approve` tool handles the transition — do not summarize or ask the user separately.
 
 **Important:** You are not permitted to edit source files. You can only write to the `.opencode/` directory.
 </system-reminder>

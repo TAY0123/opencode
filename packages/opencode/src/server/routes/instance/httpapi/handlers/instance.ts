@@ -6,6 +6,7 @@ import { Global } from "@opencode-ai/core/global"
 import { LSP } from "@/lsp/lsp"
 import { Vcs } from "@/project/vcs"
 import { Skill } from "@/skill"
+import { RuntimeFlags } from "@/effect/runtime-flags"
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
@@ -20,6 +21,7 @@ export const instanceHandlers = HttpApiBuilder.group(InstanceHttpApi, "instance"
     const lsp = yield* LSP.Service
     const skill = yield* Skill.Service
     const vcs = yield* Vcs.Service
+    const flags = yield* RuntimeFlags.Service
 
     const dispose = Effect.fn("InstanceHttpApi.dispose")(function* () {
       yield* markInstanceForDisposal(yield* InstanceState.context)
@@ -77,6 +79,14 @@ export const instanceHandlers = HttpApiBuilder.group(InstanceHttpApi, "instance"
       return yield* command.list()
     })
 
+    const getPlanAutoRetry = Effect.fn("InstanceHttpApi.planAutoRetry")(function* () {
+      return { enabled: yield* RuntimeFlags.planAutoRetryState.get(flags) }
+    })
+
+    const togglePlanAutoRetry = Effect.fn("InstanceHttpApi.planAutoRetryToggle")(function* () {
+      return { enabled: yield* RuntimeFlags.planAutoRetryState.toggle(flags) }
+    })
+
     const getAgent = Effect.fn("InstanceHttpApi.agent")(function* () {
       return yield* agent.list()
     })
@@ -102,6 +112,8 @@ export const instanceHandlers = HttpApiBuilder.group(InstanceHttpApi, "instance"
       .handle("vcsDiffRaw", getVcsDiffRaw)
       .handle("vcsApply", applyVcs)
       .handle("command", getCommand)
+      .handle("planAutoRetry", getPlanAutoRetry)
+      .handle("planAutoRetryToggle", togglePlanAutoRetry)
       .handle("agent", getAgent)
       .handle("skill", getSkill)
       .handle("lsp", getLsp)

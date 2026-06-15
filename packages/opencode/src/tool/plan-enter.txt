@@ -1,1 +1,1 @@
-Call this when a phase fails scope enforcement or contract validation and you need to return to plan mode to revise. Asks the user whether to return to plan mode or stay in build mode.
+Call this when a phase fails scope enforcement or contract validation and you need to return to plan mode to revise. Asks the user whether to return to plan mode or stay in build mode. When auto-retry mode is enabled (OPENCODE_PLAN_AUTO_RETRY), this auto-transitions to plan without prompting.

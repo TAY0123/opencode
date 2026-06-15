@@ -45,6 +45,7 @@ export class Service extends ConfigService.Service<Service>()("@opencode/Runtime
   experimentalLspTool: enabledByExperimental("OPENCODE_EXPERIMENTAL_LSP_TOOL"),
   experimentalOxfmt: enabledByExperimental("OPENCODE_EXPERIMENTAL_OXFMT"),
   experimentalPlanMode: enabledByExperimental("OPENCODE_EXPERIMENTAL_PLAN_MODE"),
+  planAutoRetry: bool("OPENCODE_PLAN_AUTO_RETRY"),
   experimentalEventSystem: enabledByExperimental("OPENCODE_EXPERIMENTAL_EVENT_SYSTEM"),
   experimentalWorkspaces: enabledByExperimental("OPENCODE_EXPERIMENTAL_WORKSPACES"),
   experimentalIconDiscovery: enabledByExperimental("OPENCODE_EXPERIMENTAL_ICON_DISCOVERY"),
@@ -56,6 +57,21 @@ export class Service extends ConfigService.Service<Service>()("@opencode/Runtime
 }) {}
 
 export type Info = Context.Service.Shape<typeof Service>
+
+let planAutoRetryOverride: boolean | undefined
+
+export const planAutoRetryState = {
+  get: (flags: Info) => Effect.sync(() => planAutoRetryOverride ?? flags.planAutoRetry),
+  set: (enabled: boolean) =>
+    Effect.sync(() => {
+      planAutoRetryOverride = enabled
+    }),
+  toggle: (flags: Info) =>
+    Effect.sync(() => {
+      planAutoRetryOverride = !(planAutoRetryOverride ?? flags.planAutoRetry)
+      return planAutoRetryOverride
+    }),
+}
 
 const emptyConfigLayer = Service.defaultLayer.pipe(
   Layer.provide(ConfigProvider.layer(ConfigProvider.fromUnknown({}))),

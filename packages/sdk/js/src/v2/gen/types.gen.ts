@@ -2368,6 +2368,10 @@ export type Command = {
   hints: Array<string>
 }
 
+export type PlanAutoRetry = {
+  enabled: boolean
+}
+
 export type Agent = {
   name: string
   description?: string
@@ -6424,6 +6428,62 @@ export type CommandListResponses = {
 }
 
 export type CommandListResponse = CommandListResponses[keyof CommandListResponses]
+
+export type PlanAutoRetryGetData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/plan-auto-retry"
+}
+
+export type PlanAutoRetryGetErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type PlanAutoRetryGetError = PlanAutoRetryGetErrors[keyof PlanAutoRetryGetErrors]
+
+export type PlanAutoRetryGetResponses = {
+  /**
+   * Plan auto retry state
+   */
+  200: PlanAutoRetry
+}
+
+export type PlanAutoRetryGetResponse = PlanAutoRetryGetResponses[keyof PlanAutoRetryGetResponses]
+
+export type PlanAutoRetryToggleData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/plan-auto-retry/toggle"
+}
+
+export type PlanAutoRetryToggleErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type PlanAutoRetryToggleError = PlanAutoRetryToggleErrors[keyof PlanAutoRetryToggleErrors]
+
+export type PlanAutoRetryToggleResponses = {
+  /**
+   * Plan auto retry state
+   */
+  200: PlanAutoRetry
+}
+
+export type PlanAutoRetryToggleResponse = PlanAutoRetryToggleResponses[keyof PlanAutoRetryToggleResponses]
 
 export type AppAgentsData = {
   body?: never
