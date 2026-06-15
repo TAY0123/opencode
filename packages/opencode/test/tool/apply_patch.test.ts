@@ -9,6 +9,8 @@ import { Format } from "../../src/format"
 import { Agent } from "../../src/agent/agent"
 import { EventV2Bridge } from "../../src/event-v2-bridge"
 import { Truncate } from "@/tool/truncate"
+import { RuntimeFlags } from "@/effect/runtime-flags"
+import { Session } from "@/session/session"
 import { TestInstance } from "../fixture/fixture"
 import { SessionID, MessageID } from "../../src/session/schema"
 import { testEffect } from "../lib/effect"
@@ -21,6 +23,8 @@ const it = testEffect(
     EventV2Bridge.defaultLayer,
     Truncate.defaultLayer,
     Agent.defaultLayer,
+    RuntimeFlags.defaultLayer,
+    Session.defaultLayer,
   ),
 )
 

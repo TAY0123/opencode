@@ -14,6 +14,9 @@ import DESCRIPTION from "./apply_patch.txt"
 import { FileSystem } from "@opencode-ai/core/filesystem"
 import { Format } from "../format"
 import * as Bom from "@/util/bom"
+import { Contract } from "@/session/contract"
+import { Session } from "@/session/session"
+import { RuntimeFlags } from "@/effect/runtime-flags"
 
 export const Parameters = Schema.Struct({
   patchText: Schema.String.annotate({ description: "The full patch text that describes all changes to be made" }),
@@ -26,6 +29,43 @@ export const ApplyPatchTool = Tool.define(
     const afs = yield* FSUtil.Service
     const format = yield* Format.Service
     const events = yield* EventV2Bridge.Service
+    const sessions = yield* Session.Service
+    const flags = yield* RuntimeFlags.Service
+
+    const enforceScope = Effect.fn("ApplyPatchTool.enforceScope")(function* (filepath: string, ctx: Tool.Context) {
+      if (ctx.agent === "plan" || ctx.agent === "verify") return
+      const instance = yield* InstanceState.context
+      const info = yield* sessions.get(ctx.sessionID)
+      const planPath = Session.planJson(info, instance)
+      const raw = yield* afs.readFileStringSafe(planPath)
+      if (!raw) {
+        if (flags.experimentalPlanMode && ctx.agent === "build") {
+          const hasPlanHistory = ctx.messages.some(
+            (m) => m.info.agent === "plan" || m.info.agent === "verify",
+          )
+          if (hasPlanHistory) yield* new Contract.NoPlanError({ planPath })
+        }
+        return
+      }
+
+      const parsed = yield* Effect.try({
+        try: () => JSON.parse(raw) as Contract.PlanJson,
+        catch: () => undefined,
+      })
+      if (!parsed) return
+
+      const absolute = path.isAbsolute(filepath) ? filepath : path.resolve(instance.worktree, filepath)
+      const relative = path.relative(instance.worktree, absolute)
+      if (relative === ".opencode" || relative.startsWith(".opencode/")) return
+
+      const allScopesRaw = parsed.phases.flatMap((phase) => phase.scope)
+      if (allScopesRaw.length === 0) return
+      const allScopes = allScopesRaw.map((s) =>
+        path.isAbsolute(s) ? s : path.resolve(instance.worktree, s),
+      )
+      if (Contract.checkScope(allScopes, absolute).length === 0) return
+      yield* new Contract.ScopeViolationError({ file: relative, allowedPaths: allScopesRaw })
+    })
 
     const run = Effect.fn("ApplyPatchTool.execute")(function* (
       params: Schema.Schema.Type<typeof Parameters>,
@@ -72,6 +112,7 @@ export const ApplyPatchTool = Tool.define(
       for (const hunk of hunks) {
         const filePath = path.resolve(instance.directory, hunk.path)
         yield* assertExternalDirectoryEffect(ctx, filePath)
+        yield* enforceScope(filePath, ctx).pipe(Effect.orDie)
 
         switch (hunk.type) {
           case "add": {
