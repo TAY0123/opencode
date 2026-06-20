@@ -1236,6 +1236,10 @@ export const layer = Layer.effect(
             Effect.provideService(Session.Service, sessions),
           )
 
+          if (agent.name === "build") {
+            msgs = msgs.filter((m) => m.info.agent !== "verify")
+          }
+
           const msg: SessionV1.Assistant = {
             id: MessageID.ascending(),
             parentID: lastUser.id,

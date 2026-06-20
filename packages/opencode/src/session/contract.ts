@@ -201,7 +201,18 @@ export const enforceScope = Effect.fn("Contract.enforceScope")(function* (
 
   const absolute = path.isAbsolute(target) ? target : path.resolve(ctx.worktree, target)
   const relative = path.relative(ctx.worktree, absolute)
-  if (relative === ".opencode" || relative.startsWith(".opencode/")) return
+  if (relative === ".opencode" || relative.startsWith(".opencode/")) {
+    if (
+      agent === "build" &&
+      (relative.startsWith(".opencode/plans/") || relative.startsWith(".opencode/contracts/"))
+    ) {
+      yield* new ScopeViolationError({
+        file: relative,
+        allowedPaths: ["(all except .opencode/plans/ and .opencode/contracts/ — build agent cannot modify plan or contract files)"],
+      })
+    }
+    return
+  }
 
   const allScopesRaw = parsed.phases.flatMap((phase) => phase.scope)
   if (allScopesRaw.length === 0) return

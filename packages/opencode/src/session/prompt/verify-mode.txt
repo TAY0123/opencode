@@ -18,12 +18,26 @@ Check each phase against these rules:
 - **HIGH_RISK_WITHOUT_HUMAN_APPROVAL**: high-risk steps require `requires_human_approval: true`
 - **EDIT_WITHOUT_VERIFICATION**: phases with edit_file actions must have verification_commands or test/lint steps
 
-### Step 3: Generate contracts
-For each phase, generate a TypeScript contract file at `.opencode/contracts/plan_<date>_<phaseID>.ts` that validates:
-- **Pre-condition**: files listed in the phase's scope exist (skip files that don't exist yet — they will be created during the phase)
-- **Post-condition**: the phase's verification commands have been executed and pass (exit code 0)
+### Step 3: Generate behavioral test contracts
+For each phase, generate a TypeScript contract file at `.opencode/contracts/plan_<date>_<phaseID>.ts` that contains behavioral tests — tests that verify how functions actually behave with real inputs, edge cases, and error conditions. These are NOT just compile/typecheck checks.
 
-Use the plan's `contract_model` and `contract_model_variant` settings if set, otherwise use the default model.
+Each contract file must have two modes:
+
+- **Pre-condition check** (runs during verify): Verify that files listed in the phase's scope exist (skip files that don't exist yet). Exit 0 if pre-conditions are met and changes are pending.
+
+- **Post-condition / behavioral tests** (runs during build): After the build agent makes changes, verify that the changes are correct by testing:
+  - Function behavior with expected inputs produces expected outputs
+  - Edge cases and boundary values are handled correctly
+  - Error conditions produce the right error types
+  - The implementation follows the plan's intent, not just that it compiles
+
+Use `console.log("P<id>: PASSED (pre-condition) — changes pending for build phase")` when skipping post-condition tests during verify. Exit 0 so verify passes.
+
+Use `process.exit(1)` when behavioral tests fail during build — this causes the build agent to see failures and fix the implementation.
+
+Write the contract files to `.opencode/contracts/plan_<date>_<phaseID>.ts`. Use the plan's `contract_model` and `contract_model_variant` settings if set, otherwise use the default model.
+
+After generating all contract files, update the `plan.json` so each phase's `contract_file` field points to the generated contract path (e.g. `".opencode/contracts/plan_<date>_<phaseID>.ts"`).
 
 ### Step 4: Validate contracts
 Run each generated contract:
